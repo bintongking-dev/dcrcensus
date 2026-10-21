@@ -1,0 +1,1637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DCR Suite Handover &amp; Census Dashboard</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Tesseract.js OCR CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+
+  <!-- Google Fonts: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+
+  <!-- Custom Medical Theme Styles -->
+  <style>
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: #fbf9f4; /* Warm Cream Medical Theme */
+      color: #1c1917;
+    }
+    .font-mono-code {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    /* Smooth Slim Scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f5f0e6;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #d6cbba;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #b8a892;
+    }
+    details summary::-webkit-details-marker {
+      display: none;
+    }
+  </style>
+</head>
+<body class="min-h-screen pb-16 antialiased selection:bg-amber-200 selection:text-amber-900">
+
+  <!-- Datalist for Oxygen Therapy options -->
+  <datalist id="oxygenOptions">
+    <option value="Room Air">
+    <option value="Nasal Prongs 3L/min">
+    <option value="Simple Face Mask 6L/min">
+    <option value="High Flow Mask 10L/min">
+    <option value="Non-Rebreather Mask (NRM) 15L/min">
+    <option value="HFNC (High Flow Nasal Cannula)">
+    <option value="NIV / BiPAP">
+    <option value="Intubated / Mechanical Ventilation">
+  </datalist>
+
+  <!-- HEADER & NAVIGATION -->
+  <header class="sticky top-0 z-40 bg-[#fbf9f4]/95 backdrop-blur-md border-b border-stone-200/90 px-4 lg:px-8 py-3 shadow-xs transition">
+    <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-3">
+      
+      <!-- Hospital & Suite Identity -->
+      <div class="flex items-center gap-3 w-full md:w-auto">
+        <!-- Circular DCR Logo with Vector SVG Fallback -->
+        <div class="relative w-12 h-12 flex-shrink-0">
+          <img 
+            src="LOGO DCR BULAT.jpg" 
+            alt="DCR Emblem" 
+            class="w-12 h-12 rounded-full object-contain shadow-sm border border-stone-300"
+            onerror="this.style.display='none'; document.getElementById('dcr-svg-logo-fallback').style.display='block';"
+          >
+          <div id="dcr-svg-logo-fallback" class="w-12 h-12 rounded-full shadow-sm" style="display:none;">
+            <svg viewBox="0 0 100 100" class="w-full h-full">
+              <circle cx="50" cy="50" r="48" fill="#444444" stroke="#e5e5e5" stroke-width="2.5"/>
+              <circle cx="50" cy="50" r="45" fill="none" stroke="#666666" stroke-width="1"/>
+              <!-- Red C-loop -->
+              <path d="M 46 68 C 30 68 22 56 22 45 C 22 34 32 33 46 33 C 58 33 60 41 50 41 C 40 41 33 40 33 45 C 33 50 38 58 46 58 Z" fill="#e11d48"/>
+              <!-- White R-loop -->
+              <path d="M 40 18 L 65 18 C 78 18 80 32 80 40 C 80 50 72 56 58 56 L 78 81 L 64 81 L 46 58 L 46 68 L 38 68 L 38 27 L 65 27 C 71 27 72 34 72 38 C 72 44 68 47 60 47 L 46 47 Z" fill="#ffffff"/>
+            </svg>
+          </div>
+        </div>
+
+        <div>
+          <h1 class="text-xs sm:text-sm md:text-base font-extrabold uppercase tracking-tight text-stone-900 leading-tight">
+            DAMAGE CONTROL RESUSCITATION SUITE (DCR SUITE)
+          </h1>
+          <p class="text-[11px] font-semibold text-stone-600">
+            EMERGENCY DEPARTMENT • HOSPITAL SUNGAI BULOH
+          </p>
+          <div class="mt-0.5 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-rose-100 border border-rose-200 text-rose-800 text-[10px] font-bold tracking-wider uppercase">
+            <span class="w-1.5 h-1.5 rounded-full bg-rose-600 animate-ping"></span>
+            TRAUMA CRITICAL AND OPERATIVE CARE
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Toolbar: Live Date & Clock, Real-Time Sync Pill, FAQ, Registry, WhatsApp -->
+      <div class="flex items-center flex-wrap gap-2 w-full md:w-auto justify-end">
+        
+        <!-- Live Date & Clock Badge -->
+        <div class="px-3 py-1.5 bg-stone-100 border border-stone-200 rounded-xl text-stone-800 text-[11px] font-mono-code font-bold flex items-center gap-2 shadow-inner">
+          <div class="flex items-center gap-1 text-stone-600">
+            <i data-lucide="calendar" class="w-3.5 h-3.5 text-stone-500"></i>
+            <span id="headerLiveDate">-- --- ----</span>
+          </div>
+          <span class="text-stone-300 font-light">|</span>
+          <div class="flex items-center gap-1 text-stone-900">
+            <i data-lucide="clock" class="w-3.5 h-3.5 text-stone-500"></i>
+            <span id="headerLiveClock">--:--:-- MYT</span>
+          </div>
+        </div>
+
+        <!-- Real-Time Sync Indicator -->
+        <div id="syncStatusBadge" class="px-2.5 py-1.5 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-800 text-[10px] font-bold flex items-center gap-1.5 shadow-2xs" title="Real-time multi-user synchronization active">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span id="syncStatusText">Synced</span>
+          <span id="activeUserDisplay" class="font-mono-code text-[9px] text-emerald-700 bg-emerald-100 px-1 py-0.2 rounded hidden sm:inline truncate max-w-[120px]">Local</span>
+        </div>
+
+        <!-- FAQ Clinical Guide Trigger -->
+        <button
+          type="button"
+          onclick="openFaqModal()"
+          class="px-2.5 py-1.5 bg-amber-50 hover:bg-amber-100 active:scale-95 text-amber-900 border border-amber-300 font-bold text-xs rounded-xl shadow-xs flex items-center gap-1 transition cursor-pointer"
+          title="Open Clinical &amp; Operational FAQ Guide"
+        >
+          <i data-lucide="help-circle" class="w-3.5 h-3.5 text-amber-600"></i>
+          <span>FAQ Guide</span>
+        </button>
+
+        <!-- Monthly Registry Modal Trigger -->
+        <button
+          type="button"
+          onclick="openMonthlyRegistryModal()"
+          class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-bold text-xs rounded-xl shadow-xs flex items-center gap-1.5 transition cursor-pointer"
+          title="Open Monthly Trauma Registry &amp; Shift Archive"
+        >
+          <i data-lucide="database" class="w-3.5 h-3.5"></i>
+          <span>Registry</span>
+        </button>
+
+        <!-- SINGLE WHATSAPP BUTTON (LOCKED UNTIL SIGN OFF) -->
+        <button
+          type="button"
+          id="headerWhatsAppBtn"
+          onclick="handleHeaderWhatsAppClick()"
+          class="px-3 py-1.5 bg-stone-200/90 text-stone-500 hover:bg-stone-300 active:scale-95 font-bold text-xs rounded-xl shadow-xs border border-stone-300 flex items-center gap-1.5 transition cursor-pointer"
+          title="Locked: Complete Sign Off first to activate WhatsApp"
+        >
+          <i data-lucide="lock" class="w-3.5 h-3.5 text-stone-500"></i>
+          <span>WhatsApp (Locked)</span>
+        </button>
+
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <main class="max-w-7xl mx-auto px-4 lg:px-8 pt-5 space-y-6">
+
+    <!-- SECTION 1: ON-DUTY SHIFT TEAM -->
+    <section class="bg-white border border-stone-200/90 rounded-2xl p-4 sm:p-5 shadow-xs space-y-3">
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-2.5 border-b border-stone-100 gap-3">
+        <div class="flex items-center gap-2">
+          <div class="w-7 h-7 rounded-lg bg-stone-800 text-white flex items-center justify-center">
+            <i data-lucide="users" class="w-3.5 h-3.5"></i>
+          </div>
+          <div>
+            <h2 class="text-xs font-bold uppercase tracking-wider text-stone-900">On-Duty Shift Team</h2>
+            <p class="text-[11px] text-stone-500">Official Roster Order for Shift Handover &amp; WhatsApp Transmission</p>
+          </div>
+        </div>
+
+        <!-- Shift Date Picker & Shift Tabs -->
+        <div class="flex items-center flex-wrap gap-2">
+          <div class="flex items-center gap-1.5 bg-stone-100 p-1 rounded-xl border border-stone-200 shadow-2xs">
+            <span class="text-[10px] font-extrabold uppercase text-stone-600 pl-1.5 flex items-center gap-1">
+              <i data-lucide="calendar" class="w-3.5 h-3.5 text-stone-500"></i>
+              <span>Date:</span>
+            </span>
+            <input 
+              type="date" 
+              id="shiftDateInput" 
+              onchange="onShiftDateChange(this.value)"
+              class="bg-white border border-stone-300 rounded-lg px-2 py-0.5 text-xs font-bold text-stone-800 focus:outline-none focus:ring-1 focus:ring-stone-400 cursor-pointer"
+            >
+          </div>
+
+          <div class="flex items-center bg-stone-100 p-1 rounded-xl border border-stone-200">
+            <button type="button" onclick="setShift('Morning')" id="shiftBtn_Morning" class="px-3 py-1 rounded-lg text-xs font-extrabold bg-stone-900 text-white shadow-xs transition">Morning (AM)</button>
+            <button type="button" onclick="setShift('Evening')" id="shiftBtn_Evening" class="px-3 py-1 rounded-lg text-xs font-bold text-stone-600 hover:text-stone-900 transition">Evening (PM)</button>
+            <button type="button" onclick="setShift('Night')" id="shiftBtn_Night" class="px-3 py-1 rounded-lg text-xs font-bold text-stone-600 hover:text-stone-900 transition">Night (Night)</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="space-y-3">
+        <div class="bg-stone-50/80 border border-stone-200/80 rounded-xl p-3">
+          <div class="flex items-center gap-1.5 mb-2.5 pb-1.5 border-b border-stone-200/60">
+            <span class="w-2 h-2 rounded-full bg-indigo-600"></span>
+            <span class="text-[10px] font-extrabold uppercase tracking-wider text-stone-700">Trauma Consultants, Physicians &amp; Supervisors</span>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+            <div>
+              <label class="block text-[10px] font-extrabold text-stone-700 uppercase mb-1">Trauma Consultant</label>
+              <input type="text" id="rosterConsultant" placeholder="Dr..." oninput="saveLocalRoster()" class="w-full bg-white border border-stone-300 rounded-xl px-2.5 py-1.5 text-xs font-medium focus:ring-2 focus:ring-stone-400 focus:outline-none">
+            </div>
+            <div>
+              <label class="block text-[10px] font-extrabold text-stone-700 uppercase mb-1">Trauma / Emergency Physician</label>
+              <input type="text" id="rosterPhysician" placeholder="Dr..." oninput="saveLocalRoster()" class="w-full bg-white border border-stone-300 rounded-xl px-2.5 py-1.5 text-xs font-medium focus:ring-2 focus:ring-stone-400 focus:outline-none">
+            </div>
+            <div>
+              <label class="block text-[10px] font-extrabold text-stone-700 uppercase mb-1">Trauma Supervisors</label>
+              <input type="text" id="rosterPenyelia" placeholder="Matron / Sister / JT / AMO..." oninput="saveLocalRoster()" class="w-full bg-white border border-stone-300 rounded-xl px-2.5 py-1.5 text-xs font-medium focus:ring-2 focus:ring-stone-400 focus:outline-none">
+            </div>
+            <div>
+              <label class="block text-[10px] font-extrabold text-stone-700 uppercase mb-1">Medical Officer (MO)</label>
+              <input type="text" id="rosterMO" placeholder="Dr..." oninput="saveLocalRoster()" class="w-full bg-white border border-stone-300 rounded-xl px-2.5 py-1.5 text-xs font-medium focus:ring-2 focus:ring-stone-400 focus:outline-none">
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-stone-50/80 border border-stone-200/80 rounded-xl p-3">
+          <div class="flex items-center gap-1.5 mb-2.5 pb-1.5 border-b border-stone-200/60">
+            <span class="w-2 h-2 rounded-full bg-emerald-600"></span>
+            <span class="text-[10px] font-extrabold uppercase tracking-wider text-stone-700">HO, Medical Assistant, Nursing &amp; PPK</span>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+            <div>
+              <label class="block text-[10px] font-extrabold text-stone-700 uppercase mb-1">House Officer (HO)</label>
+              <input type="text" id="rosterHO" placeholder="Dr..." oninput="saveLocalRoster()" class="w-full bg-white border border-stone-300 rounded-xl px-2.5 py-1.5 text-xs font-medium focus:ring-2 focus:ring-stone-400 focus:outline-none">
+            </div>
+            <div>
+              <label class="block text-[10px] font-extrabold text-stone-700 uppercase mb-1">Medical Assistant (MA)</label>
+              <input type="text" id="rosterMA" placeholder="AMO..." oninput="saveLocalRoster()" class="w-full bg-white border border-stone-300 rounded-xl px-2.5 py-1.5 text-xs font-medium focus:ring-2 focus:ring-stone-400 focus:outline-none">
+            </div>
+            <div>
+              <label class="block text-[10px] font-extrabold text-stone-700 uppercase mb-1">Staff Nurse (SN)</label>
+              <input type="text" id="rosterSN" placeholder="SN..." oninput="saveLocalRoster()" class="w-full bg-white border border-stone-300 rounded-xl px-2.5 py-1.5 text-xs font-medium focus:ring-2 focus:ring-stone-400 focus:outline-none">
+            </div>
+            <div>
+              <label class="block text-[10px] font-extrabold text-stone-700 uppercase mb-1">PPK Support</label>
+              <input type="text" id="rosterPPK" placeholder="PPK..." oninput="saveLocalRoster()" class="w-full bg-white border border-stone-300 rounded-xl px-2.5 py-1.5 text-xs font-medium focus:ring-2 focus:ring-stone-400 focus:outline-none">
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 2: 10 RESUSCITATION BAYS -->
+    <section class="space-y-4">
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div>
+          <h2 class="text-sm font-extrabold uppercase tracking-tight text-stone-900 flex items-center gap-2">
+            <span>Bed Roster &amp; DCR Clinical Status</span>
+            <span class="text-[11px] font-normal text-stone-500">(10 Resuscitation Bays)</span>
+          </h2>
+          <p class="text-xs text-stone-500">Formatted to standard: SB, Diagnosis, Transfer In, TXA, Oxygen Therapy, Disposition &amp; Status</p>
+        </div>
+
+        <div class="flex items-center gap-1.5 flex-wrap">
+          <button type="button" onclick="filterZone('ALL')" id="filterBtn_ALL" class="px-2.5 py-1 text-xs font-bold rounded-lg bg-stone-900 text-white transition cursor-pointer">ALL (10)</button>
+          <button type="button" onclick="filterZone('DCR')" id="filterBtn_DCR" class="px-2.5 py-1 text-xs font-bold rounded-lg bg-rose-100 text-rose-800 hover:bg-rose-200 transition cursor-pointer">DCR 1-2 (RED)</button>
+          <button type="button" onclick="filterZone('STEPDOWN')" id="filterBtn_STEPDOWN" class="px-2.5 py-1 text-xs font-bold rounded-lg bg-amber-100 text-amber-800 hover:bg-amber-200 transition cursor-pointer">STEPDOWN 1-4 (YELLOW)</button>
+          <button type="button" onclick="filterZone('EXT')" id="filterBtn_EXT" class="px-2.5 py-1 text-xs font-bold rounded-lg bg-sky-100 text-sky-800 hover:bg-sky-200 transition cursor-pointer">DCR Ext 1-4 (BLUE)</button>
+        </div>
+      </div>
+
+      <div id="bedsGridContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+    </section>
+
+    <!-- SECTION 3: CENSUS REPORT -->
+    <section class="bg-[#f0fdf4] border-2 border-emerald-300 rounded-2xl p-4 sm:p-5 shadow-xs space-y-4">
+      <div class="flex items-center justify-between pb-3 border-b border-emerald-200 flex-wrap gap-2">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-xs">
+            <i data-lucide="activity" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h2 class="text-xs font-extrabold uppercase tracking-wider text-emerald-950">
+              Census Report: Shift Census &amp; Case Disposition Counters
+            </h2>
+            <p class="text-[11px] text-emerald-800">Live Shift Census &amp; Resuscitation Case Summary</p>
+          </div>
+        </div>
+
+        <div>
+          <button
+            type="button"
+            onclick="generateAndSend24HourCensusWhatsApp()"
+            class="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 active:scale-95 text-white font-extrabold text-xs rounded-xl shadow-md flex items-center gap-1.5 transition cursor-pointer"
+          >
+            <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24">
+              <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766 0-3.187-2.59-5.771-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.312.045-.698.077-2.022-.472-1.691-.703-2.775-2.434-2.859-2.548-.084-.114-.683-.91-.683-1.737 0-.827.432-1.233.585-1.402.153-.169.336-.212.449-.212.112 0 .225.002.324.007.104.005.244-.04.382.291.144.344.492 1.205.535 1.293.043.088.072.192.014.308-.057.117-.087.19-.172.291-.086.102-.18.228-.258.306-.086.086-.176.18-.076.353.1.172.444.733.953 1.187.656.586 1.209.768 1.382.854.173.086.274.072.375-.044.102-.116.435-.506.551-.68.115-.174.232-.145.39-.087.16.058 1.012.478 1.186.565.174.087.29.13.333.203.044.073.044.423-.1.828zM12 2C6.477 2 2 6.477 2 12c0 1.891.524 3.66 1.436 5.176L2 22l4.981-1.309A9.954 9.954 0 0012 22c5.523 0 10-4.477 10-10S17.523 2 12 2zm0 18.2c-1.636 0-3.15-.494-4.417-1.34l-.317-.212-3.096.812.827-3.018-.233-.37A8.172 8.172 0 013.8 12c0-4.521 3.679-8.2 8.2-8.2 4.522 0 8.2 3.679 8.2 8.2 0 4.522-3.678 8.2-8.2 8.2Z"/>
+            </svg>
+            <span>Generate 24 Hour Census &amp; Send</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 sm:grid-cols-5 lg:grid-cols-10 gap-2.5">
+        <div class="bg-white border-2 border-stone-300 rounded-xl p-2 text-center shadow-2xs flex flex-col justify-between">
+          <span class="block text-[10px] font-bold text-stone-600 uppercase tracking-wider">Carry Forward</span>
+          <div class="flex items-center justify-between mt-1 gap-1">
+            <button type="button" onclick="adjustCensus('carryForward', -1)" class="w-6 h-6 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-700 font-extrabold text-sm flex items-center justify-center cursor-pointer">−</button>
+            <input type="number" id="c_carryForward" min="0" value="0" onchange="updateCensusField('carryForward', this.value)" class="w-10 text-center text-base sm:text-lg font-extrabold text-stone-800 bg-transparent focus:outline-none">
+            <button type="button" onclick="adjustCensus('carryForward', 1)" class="w-6 h-6 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-700 font-extrabold text-sm flex items-center justify-center cursor-pointer">+</button>
+          </div>
+        </div>
+
+        <div class="bg-white border-2 border-sky-300 rounded-xl p-2 text-center shadow-2xs flex flex-col justify-between">
+          <span class="block text-[10px] font-bold text-sky-700 uppercase tracking-wider">New Cases</span>
+          <div class="flex items-center justify-between mt-1 gap-1">
+            <button type="button" onclick="adjustCensus('newCase', -1)" class="w-6 h-6 rounded-lg bg-sky-100 hover:bg-sky-200 text-sky-800 font-extrabold text-sm flex items-center justify-center cursor-pointer">−</button>
+            <input type="number" id="c_newCase" min="0" value="0" onchange="updateCensusField('newCase', this.value)" class="w-10 text-center text-base sm:text-lg font-extrabold text-sky-900 bg-transparent focus:outline-none">
+            <button type="button" onclick="adjustCensus('newCase', 1)" class="w-6 h-6 rounded-lg bg-sky-100 hover:bg-sky-200 text-sky-800 font-extrabold text-sm flex items-center justify-center cursor-pointer">+</button>
+          </div>
+        </div>
+
+        <div class="bg-white border-2 border-purple-300 rounded-xl p-2 text-center shadow-2xs flex flex-col justify-between">
+          <span class="block text-[10px] font-bold text-purple-700 uppercase tracking-wider">OT (Surgical)</span>
+          <div class="flex items-center justify-between mt-1 gap-1">
+            <button type="button" onclick="adjustCensus('ot', -1)" class="w-6 h-6 rounded-lg bg-purple-100 hover:bg-purple-200 text-purple-800 font-extrabold text-sm flex items-center justify-center cursor-pointer">−</button>
+            <input type="number" id="c_ot" min="0" value="0" onchange="updateCensusField('ot', this.value)" class="w-10 text-center text-base sm:text-lg font-extrabold text-purple-900 bg-transparent focus:outline-none">
+            <button type="button" onclick="adjustCensus('ot', 1)" class="w-6 h-6 rounded-lg bg-purple-100 hover:bg-purple-200 text-purple-800 font-extrabold text-sm flex items-center justify-center cursor-pointer">+</button>
+          </div>
+        </div>
+
+        <div class="bg-white border-2 border-indigo-300 rounded-xl p-2 text-center shadow-2xs flex flex-col justify-between">
+          <span class="block text-[10px] font-bold text-indigo-700 uppercase tracking-wider">Transfer Out</span>
+          <div class="flex items-center justify-between mt-1 gap-1">
+            <button type="button" onclick="adjustCensus('transferOut', -1)" class="w-6 h-6 rounded-lg bg-indigo-100 hover:bg-indigo-200 text-indigo-800 font-extrabold text-sm flex items-center justify-center cursor-pointer">−</button>
+            <input type="number" id="c_transferOut" min="0" value="0" onchange="updateCensusField('transferOut', this.value)" class="w-10 text-center text-base sm:text-lg font-extrabold text-indigo-900 bg-transparent focus:outline-none">
+            <button type="button" onclick="adjustCensus('transferOut', 1)" class="w-6 h-6 rounded-lg bg-indigo-100 hover:bg-indigo-200 text-indigo-800 font-extrabold text-sm flex items-center justify-center cursor-pointer">+</button>
+          </div>
+        </div>
+
+        <div class="bg-white border-2 border-rose-300 rounded-xl p-2 text-center shadow-2xs flex flex-col justify-between">
+          <span class="block text-[10px] font-bold text-rose-700 uppercase tracking-wider">Deaths</span>
+          <div class="flex items-center justify-between mt-1 gap-1">
+            <button type="button" onclick="adjustCensus('death', -1)" class="w-6 h-6 rounded-lg bg-rose-100 hover:bg-rose-200 text-rose-800 font-extrabold text-sm flex items-center justify-center cursor-pointer">−</button>
+            <input type="number" id="c_death" min="0" value="0" onchange="updateCensusField('death', this.value)" class="w-10 text-center text-base sm:text-lg font-extrabold text-rose-900 bg-transparent focus:outline-none">
+            <button type="button" onclick="adjustCensus('death', 1)" class="w-6 h-6 rounded-lg bg-rose-100 hover:bg-rose-200 text-rose-800 font-extrabold text-sm flex items-center justify-center cursor-pointer">+</button>
+          </div>
+        </div>
+
+        <div class="bg-white border-2 border-emerald-400 rounded-xl p-2 text-center shadow-2xs flex flex-col justify-between">
+          <span class="block text-[10px] font-bold text-emerald-700 uppercase tracking-wider">Ward Admits</span>
+          <div class="flex items-center justify-between mt-1 gap-1">
+            <button type="button" onclick="adjustCensus('admit', -1)" class="w-6 h-6 rounded-lg bg-emerald-100 hover:bg-emerald-200 text-emerald-800 font-extrabold text-sm flex items-center justify-center cursor-pointer">−</button>
+            <input type="number" id="c_admit" min="0" value="0" onchange="updateCensusField('admit', this.value)" class="w-10 text-center text-base sm:text-lg font-extrabold text-emerald-900 bg-transparent focus:outline-none">
+            <button type="button" onclick="adjustCensus('admit', 1)" class="w-6 h-6 rounded-lg bg-emerald-100 hover:bg-emerald-200 text-emerald-800 font-extrabold text-sm flex items-center justify-center cursor-pointer">+</button>
+          </div>
+        </div>
+
+        <div class="bg-white border-2 border-amber-300 rounded-xl p-2 text-center shadow-2xs flex flex-col justify-between">
+          <span class="block text-[10px] font-bold text-amber-700 uppercase tracking-wider">AOR</span>
+          <div class="flex items-center justify-between mt-1 gap-1">
+            <button type="button" onclick="adjustCensus('aor', -1)" class="w-6 h-6 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-800 font-extrabold text-sm flex items-center justify-center cursor-pointer">−</button>
+            <input type="number" id="c_aor" min="0" value="0" onchange="updateCensusField('aor', this.value)" class="w-10 text-center text-base sm:text-lg font-extrabold text-amber-900 bg-transparent focus:outline-none">
+            <button type="button" onclick="adjustCensus('aor', 1)" class="w-6 h-6 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-800 font-extrabold text-sm flex items-center justify-center cursor-pointer">+</button>
+          </div>
+        </div>
+
+        <div class="bg-white border-2 border-teal-300 rounded-xl p-2 text-center shadow-2xs flex flex-col justify-between">
+          <span class="block text-[10px] font-bold text-teal-700 uppercase tracking-wider">Discharge</span>
+          <div class="flex items-center justify-between mt-1 gap-1">
+            <button type="button" onclick="adjustCensus('discharge', -1)" class="w-6 h-6 rounded-lg bg-teal-100 hover:bg-teal-200 text-teal-800 font-extrabold text-sm flex items-center justify-center cursor-pointer">−</button>
+            <input type="number" id="c_discharge" min="0" value="0" onchange="updateCensusField('discharge', this.value)" class="w-10 text-center text-base sm:text-lg font-extrabold text-teal-900 bg-transparent focus:outline-none">
+            <button type="button" onclick="adjustCensus('discharge', 1)" class="w-6 h-6 rounded-lg bg-teal-100 hover:bg-teal-200 text-teal-800 font-extrabold text-sm flex items-center justify-center cursor-pointer">+</button>
+          </div>
+        </div>
+
+        <div class="bg-white border-2 border-orange-300 rounded-xl p-2 text-center shadow-2xs flex flex-col justify-between">
+          <span class="block text-[10px] font-bold text-orange-700 uppercase tracking-wider">DCR Bed Bal</span>
+          <div class="flex items-center justify-between mt-1 gap-1">
+            <button type="button" onclick="adjustCensus('pending', -1)" class="w-6 h-6 rounded-lg bg-orange-100 hover:bg-orange-200 text-orange-800 font-extrabold text-sm flex items-center justify-center cursor-pointer">−</button>
+            <input type="number" id="c_pending" min="0" value="0" onchange="updateCensusField('pending', this.value)" class="w-10 text-center text-base sm:text-lg font-extrabold text-orange-900 bg-transparent focus:outline-none">
+            <button type="button" onclick="adjustCensus('pending', 1)" class="w-6 h-6 rounded-lg bg-orange-100 hover:bg-orange-200 text-orange-800 font-extrabold text-sm flex items-center justify-center cursor-pointer">+</button>
+          </div>
+        </div>
+
+        <div class="bg-white border-2 border-cyan-300 rounded-xl p-2 text-center shadow-2xs flex flex-col justify-between">
+          <span class="block text-[10px] font-bold text-cyan-700 uppercase tracking-wider">DCR Ext Bay</span>
+          <div class="flex items-center justify-between mt-1 gap-1">
+            <button type="button" onclick="adjustCensus('dcrExt', -1)" class="w-6 h-6 rounded-lg bg-cyan-100 hover:bg-cyan-200 text-cyan-800 font-extrabold text-sm flex items-center justify-center cursor-pointer">−</button>
+            <input type="number" id="c_dcrExt" min="0" value="0" onchange="updateCensusField('dcrExt', this.value)" class="w-10 text-center text-base sm:text-lg font-extrabold text-cyan-900 bg-transparent focus:outline-none">
+            <button type="button" onclick="adjustCensus('dcrExt', 1)" class="w-6 h-6 rounded-lg bg-cyan-100 hover:bg-cyan-200 text-cyan-800 font-extrabold text-sm flex items-center justify-center cursor-pointer">+</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 4: WARD ADMISSION REGISTRY -->
+    <section class="bg-white border border-stone-200/90 rounded-2xl p-4 sm:p-5 shadow-xs space-y-3">
+      <div class="flex items-center justify-between pb-2 border-b border-stone-100 flex-wrap gap-2">
+        <div class="flex items-center gap-2">
+          <div class="w-7 h-7 rounded-lg bg-emerald-700 text-white flex items-center justify-center">
+            <i data-lucide="building-2" class="w-3.5 h-3.5"></i>
+          </div>
+          <div>
+            <h2 class="text-xs font-bold uppercase tracking-wider text-stone-900">Ward Admission Registry</h2>
+            <p class="text-[11px] text-stone-500">Log of resus patients admitted to inpatient wards by specialty</p>
+          </div>
+        </div>
+
+        <button type="button" onclick="openAdmissionModal()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-xs font-bold rounded-xl flex items-center gap-1 shadow-xs transition cursor-pointer">
+          <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+          <span>Add Ward Admission</span>
+        </button>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs">
+          <thead>
+            <tr class="bg-stone-50 text-stone-700 font-bold border-b border-stone-200">
+              <th class="py-2 px-3">Bay / Origin</th>
+              <th class="py-2 px-3">Patient Name</th>
+              <th class="py-2 px-3">Patient ID</th>
+              <th class="py-2 px-3">Target Ward</th>
+              <th class="py-2 px-3">Discipline / Specialty</th>
+              <th class="py-2 px-3">Brief Diagnosis</th>
+              <th class="py-2 px-3 text-center">Action</th>
+            </tr>
+          </thead>
+          <tbody id="admitTableBody" class="divide-y divide-stone-100 font-medium"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- SECTION 5: SHIFT VERIFICATION & SIGN OFF -->
+    <section class="bg-white border-2 border-stone-300 rounded-2xl p-4 sm:p-5 shadow-xs space-y-4">
+      <div class="flex items-center justify-between pb-3 border-b border-stone-200 flex-wrap gap-2">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-xl bg-stone-900 text-white flex items-center justify-center">
+            <i data-lucide="check-circle" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h2 class="text-xs font-extrabold uppercase tracking-wider text-stone-900">Shift Verification &amp; Sign Off</h2>
+            <p class="text-[11px] text-stone-500">Shift Handover between Outgoing &amp; Incoming Staff (SN &amp; MA Only)</p>
+          </div>
+        </div>
+        <div id="signOffBadge" class="text-xs font-bold px-3 py-1 rounded-full bg-amber-100 text-amber-800 border border-amber-200">
+          Shift In Progress (Pending Sign Off)
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div>
+          <label class="block text-[11px] font-bold text-stone-600 uppercase mb-1">Prepared By (Staff Name)</label>
+          <input type="text" id="signOffName" placeholder="e.g., SN Nuraqilah / AMO Azman" class="w-full bg-[#fbf9f4] border border-stone-300 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-none">
+        </div>
+        <div>
+          <label class="block text-[11px] font-bold text-stone-600 uppercase mb-1">Prepared By Role</label>
+          <select id="signOffRole" class="w-full bg-[#fbf9f4] border border-stone-300 rounded-xl px-3 py-2 text-xs font-bold text-stone-900 focus:outline-none cursor-pointer">
+            <option value="SN">Staff Nurse (SN)</option>
+            <option value="MA">Medical Assistant (MA)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-[11px] font-bold text-stone-600 uppercase mb-1">Report To (Staff Name)</label>
+          <input type="text" id="signOffReportToName" placeholder="e.g., SN Farah / AMO Rizal" class="w-full bg-[#fbf9f4] border border-stone-300 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-none">
+        </div>
+        <div>
+          <label class="block text-[11px] font-bold text-stone-600 uppercase mb-1">Report To Role</label>
+          <select id="signOffReportToRole" class="w-full bg-[#fbf9f4] border border-stone-300 rounded-xl px-3 py-2 text-xs font-bold text-stone-900 focus:outline-none cursor-pointer">
+            <option value="SN">Staff Nurse (SN)</option>
+            <option value="MA">Medical Assistant (MA)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+        <div>
+          <label class="block text-[11px] font-bold text-stone-600 uppercase mb-1">Sign Off Timestamp</label>
+          <input type="text" id="signOffTimestamp" readonly placeholder="Auto-generated upon Sign Off" class="w-full bg-stone-100 border border-stone-300 rounded-xl px-3 py-2 text-xs font-mono-code font-bold text-stone-700">
+        </div>
+        <div class="flex items-center text-[11px] text-stone-600 font-medium bg-stone-50 border border-stone-200 rounded-xl px-3 py-2">
+          <span>🛡️ <strong>SOP DCR Suite:</strong> Pengesahan dan penyerahan tugas (Handover) dikhaskan secara rasmi kepada <strong>SN</strong> dan <strong>MA</strong> sahaja.</span>
+        </div>
+      </div>
+
+      <div class="flex flex-col sm:flex-row items-center justify-end gap-2 pt-2 border-t border-stone-100">
+        <button type="button" onclick="openResetConfirmModal()" class="w-full sm:w-auto px-4 py-2 text-stone-600 hover:text-stone-900 hover:bg-stone-100 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer">
+          <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+          <span>Reset Form</span>
+        </button>
+
+        <button type="button" id="btnExecuteSignOff" onclick="executeSignOff()" class="w-full sm:w-auto px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-extrabold text-xs rounded-xl shadow-md flex items-center justify-center gap-2 transition cursor-pointer">
+          <i data-lucide="lock" class="w-4 h-4"></i>
+          <span>Sign Off &amp; Archive to Registry</span>
+        </button>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- MODAL: MONTHLY TRAUMA CLINICAL REGISTRY -->
+  <div id="monthlyRegistryModal" class="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-xs hidden items-center justify-center p-3 sm:p-5">
+    <div class="bg-white border border-stone-200 rounded-2xl max-w-5xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+      <div class="px-5 py-4 bg-[#fbf9f4] border-b border-stone-200 flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center">
+            <i data-lucide="database" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h3 class="text-sm font-extrabold uppercase text-stone-900">Monthly Trauma Clinical Registry</h3>
+            <p class="text-[11px] text-stone-500">Shift Archives, Census Statistics &amp; DCR Suite Handover Records</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeMonthlyRegistryModal()" class="p-1.5 text-stone-400 hover:text-stone-700 rounded-lg hover:bg-stone-200 transition"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+
+      <div class="p-4 border-b border-stone-100 bg-stone-50 flex flex-wrap items-center justify-between gap-2 text-xs">
+        <div class="flex items-center gap-2">
+          <label class="font-bold text-stone-600">Select Month:</label>
+          <input type="month" id="registryMonthPicker" onchange="renderMonthlyRegistryTable()" class="px-2.5 py-1.5 rounded-lg border border-stone-300 bg-white font-medium">
+          <button type="button" onclick="setRegistryFilterAll()" class="px-3 py-1.5 bg-stone-200 hover:bg-stone-300 font-bold rounded-lg text-stone-700 transition">All Records</button>
+        </div>
+        <div class="flex items-center gap-2">
+          <button type="button" onclick="exportRegistryToCSV()" class="px-3 py-1.5 bg-stone-800 hover:bg-stone-900 text-white font-bold rounded-lg flex items-center gap-1.5 transition">
+            <i data-lucide="download" class="w-3.5 h-3.5"></i>
+            <span>Export CSV</span>
+          </button>
+          <button type="button" onclick="openClearArchiveConfirmModal()" class="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold rounded-lg transition">Clear Archive</button>
+        </div>
+      </div>
+
+      <div class="flex-1 overflow-y-auto p-4">
+        <table class="w-full text-left text-xs">
+          <thead>
+            <tr class="bg-stone-100 text-stone-700 font-bold border-b border-stone-200">
+              <th class="py-2.5 px-3">Date</th>
+              <th class="py-2.5 px-3">Shift</th>
+              <th class="py-2.5 px-3">Handover (Staff ➔ Report To)</th>
+              <th class="py-2.5 px-3 text-center">New Cases</th>
+              <th class="py-2.5 px-3 text-center">OT</th>
+              <th class="py-2.5 px-3 text-center">Ward</th>
+              <th class="py-2.5 px-3 text-center">Death</th>
+              <th class="py-2.5 px-3 text-center">TXA</th>
+              <th class="py-2.5 px-3 text-center">Report</th>
+            </tr>
+          </thead>
+          <tbody id="registryTableBody" class="divide-y divide-stone-100"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: HANDOVER PREVIEW -->
+  <div id="handoverModal" class="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-xs hidden items-center justify-center p-3 sm:p-5">
+    <div class="bg-white border border-stone-200 rounded-2xl max-w-3xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+      <div class="px-5 py-4 bg-[#fbf9f4] border-b border-stone-200 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-xl bg-stone-900 text-white flex items-center justify-center"><i data-lucide="file-text" class="w-4 h-4"></i></div>
+          <div>
+            <h3 class="text-sm font-extrabold uppercase text-stone-900">Handover Report Preview</h3>
+            <p class="text-[11px] text-stone-500">Official Standard Resus Template for Department WhatsApp</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeHandoverModal()" class="p-1.5 text-stone-400 hover:text-stone-700 rounded-lg hover:bg-stone-200 transition"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+
+      <div class="p-4 flex-1 flex flex-col gap-3 overflow-hidden">
+        <textarea id="handoverTextOutput" readonly class="w-full flex-1 bg-stone-50 border border-stone-300 rounded-xl p-3 font-mono-code text-xs text-stone-800 leading-relaxed focus:outline-none resize-none shadow-inner"></textarea>
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-2 pt-1">
+          <span id="modalWhatsAppStatusNote" class="text-[11px] font-semibold text-amber-700">WhatsApp is locked. Complete "Sign Off &amp; Archive" to activate.</span>
+          <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
+            <button type="button" onclick="copyHandoverToClipboard()" class="px-4 py-2 bg-stone-100 hover:bg-stone-200 text-stone-800 font-bold text-xs rounded-xl border border-stone-300 flex items-center gap-1.5 transition cursor-pointer">
+              <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+              <span>Copy Text</span>
+            </button>
+            <button type="button" id="modalSendWhatsAppBtn" onclick="sendHandoverToWhatsApp()" class="px-4 py-2 bg-stone-200 text-stone-500 hover:bg-stone-300 font-bold text-xs rounded-xl border border-stone-300 flex items-center gap-1.5 transition cursor-pointer">
+              <i data-lucide="lock" class="w-3.5 h-3.5 text-stone-500"></i>
+              <span>WhatsApp (Locked)</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: CAMERA OCR SCANNER -->
+  <div id="ocrModal" class="fixed inset-0 z-50 bg-stone-900/70 backdrop-blur-xs hidden items-center justify-center p-3 sm:p-5">
+    <div class="bg-white border border-stone-200 rounded-2xl max-w-md w-full p-5 space-y-4 shadow-2xl">
+      <div class="flex items-center justify-between pb-2 border-b border-stone-200">
+        <div class="flex items-center gap-2">
+          <div class="w-7 h-7 rounded-lg bg-rose-600 text-white flex items-center justify-center"><i data-lucide="camera" class="w-4 h-4"></i></div>
+          <h3 class="text-xs font-bold uppercase text-stone-900">Scan Patient Sticker / National ID</h3>
+        </div>
+        <button type="button" onclick="closeOcrModal()" class="text-stone-400 hover:text-stone-700"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+
+      <div class="relative w-full aspect-4/3 bg-black rounded-xl overflow-hidden flex items-center justify-center">
+        <video id="ocrVideo" autoplay playsinline class="w-full h-full object-cover"></video>
+        <canvas id="ocrCanvas" class="hidden"></canvas>
+        <div id="ocrTargetGuide" class="absolute inset-4 border-2 border-dashed border-rose-400 rounded-lg pointer-events-none opacity-80 flex items-center justify-center">
+          <span class="bg-black/60 text-white text-[10px] px-2 py-0.5 rounded font-mono-code">Align Sticker Here</span>
+        </div>
+        <div id="ocrSpinner" class="absolute inset-0 bg-stone-900/80 hidden flex-col items-center justify-center gap-2 text-white">
+          <div class="w-8 h-8 border-3 border-rose-500 border-t-transparent rounded-full animate-spin"></div>
+          <span class="text-xs font-bold">Extracting Text (OCR)...</span>
+        </div>
+      </div>
+
+      <div class="space-y-2">
+        <button type="button" onclick="captureAndProcessOcr()" class="w-full py-2.5 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-extrabold text-xs rounded-xl shadow transition flex items-center justify-center gap-2 cursor-pointer">
+          <i data-lucide="aperture" class="w-4 h-4"></i>
+          <span>Capture &amp; Auto-Extract</span>
+        </button>
+        <div class="flex items-center justify-center gap-2 text-[11px] text-stone-500">
+          <span>Or choose an image file:</span>
+          <input type="file" id="ocrFileInput" accept="image/*" onchange="handleOcrFileUpload(event)" class="text-xs file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:bg-stone-200 file:font-semibold">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: ADD WARD ADMISSION -->
+  <div id="addAdmissionModal" class="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-xs hidden items-center justify-center p-3 sm:p-5">
+    <div class="bg-white border border-stone-200 rounded-2xl max-w-md w-full p-5 space-y-4 shadow-2xl">
+      <div class="flex items-center justify-between pb-2 border-b border-stone-200">
+        <div class="flex items-center gap-2">
+          <div class="w-7 h-7 rounded-lg bg-emerald-600 text-white flex items-center justify-center"><i data-lucide="building-2" class="w-4 h-4"></i></div>
+          <h3 class="text-xs font-bold uppercase text-stone-900">Add Ward Admission</h3>
+        </div>
+        <button type="button" onclick="closeAdmissionModal()" class="text-stone-400 hover:text-stone-700"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+
+      <div class="space-y-3 text-xs">
+        <div>
+          <label class="block font-bold text-stone-700 uppercase mb-1">Origin Bay / Bed (Select to Auto-Fill)</label>
+          <select id="modalAdmitBedSelect" onchange="onAdmissionBayChange(this.value)" class="w-full bg-[#fbf9f4] border border-stone-300 rounded-xl px-3 py-2 font-semibold focus:outline-none">
+            <option value="">-- Manual Origin or Select Occupied Bed --</option>
+          </select>
+        </div>
+        <div>
+          <label class="block font-bold text-stone-700 uppercase mb-1">Origin Bay Name (Display)</label>
+          <input type="text" id="modalAdmitBed" placeholder="e.g., DCR 1, STEPDOWN 2" class="w-full bg-[#fbf9f4] border border-stone-300 rounded-xl px-3 py-2">
+        </div>
+        <div>
+          <label class="block font-bold text-stone-700 uppercase mb-1">Patient Name</label>
+          <input type="text" id="modalAdmitName" placeholder="Full Patient Name (AUTO-UPPERCASE)" oninput="this.value = this.value.toUpperCase();" class="w-full bg-[#fbf9f4] border border-stone-300 rounded-xl px-3 py-2 uppercase font-bold">
+        </div>
+        <div>
+          <label class="block font-bold text-stone-700 uppercase mb-1">Patient ID (RN / SB)</label>
+          <input type="text" id="modalAdmitId" placeholder="e.g., SB 12345 / RN 67890" class="w-full bg-[#fbf9f4] border border-stone-300 rounded-xl px-3 py-2 font-mono-code">
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block font-bold text-stone-700 uppercase mb-1">Target Ward</label>
+            <input type="text" id="modalAdmitWard" placeholder="e.g., Ward 5, ICU" class="w-full bg-[#fbf9f4] border border-stone-300 rounded-xl px-3 py-2 font-semibold">
+          </div>
+          <div>
+            <label class="block font-bold text-stone-700 uppercase mb-1">Discipline / Specialty</label>
+            <select id="modalAdmitDiscipline" class="w-full bg-[#fbf9f4] border border-stone-300 rounded-xl px-3 py-2 font-semibold">
+              <option value="Ortho">Ortho</option>
+              <option value="Surgical">Surgical</option>
+              <option value="Medical">Medical</option>
+              <option value="Neuro">Neuro</option>
+              <option value="Paeds">Paeds</option>
+              <option value="Psych">Psych</option>
+              <option value="Others">Others</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block font-bold text-stone-700 uppercase mb-1">Brief Diagnosis</label>
+          <input type="text" id="modalAdmitDiagnosis" placeholder="e.g., Closed fracture femur" class="w-full bg-[#fbf9f4] border border-stone-300 rounded-xl px-3 py-2">
+        </div>
+
+        <div class="p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl">
+          <label class="flex items-center gap-2 cursor-pointer text-[11px] font-bold text-emerald-900">
+            <input type="checkbox" id="modalAdmitAutoVacate" checked class="rounded text-emerald-600 focus:ring-emerald-400">
+            <span>Auto-vacate &amp; reset bay upon admission</span>
+          </label>
+          <p class="text-[10px] text-emerald-700 ml-5 mt-0.5">Clears bed in resuscitation roster as patient transfers to ward</p>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-end gap-2 pt-2 border-t border-stone-200">
+        <button type="button" onclick="closeAdmissionModal()" class="px-3 py-1.5 rounded-xl border border-stone-300 text-stone-600 font-bold text-xs hover:bg-stone-100">Cancel</button>
+        <button type="button" onclick="submitAdmissionModal()" class="px-4 py-1.5 rounded-xl bg-emerald-600 text-white font-bold text-xs hover:bg-emerald-700 shadow">Save Admission</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: CONFIRM RESET FORM -->
+  <div id="resetConfirmModal" class="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-xs hidden items-center justify-center p-3 sm:p-5">
+    <div class="bg-white border border-stone-200 rounded-2xl max-w-sm w-full p-5 space-y-4 shadow-2xl">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center flex-shrink-0"><i data-lucide="alert-triangle" class="w-5 h-5"></i></div>
+        <div>
+          <h3 class="text-sm font-bold text-stone-900">Reset Shift Form?</h3>
+          <p class="text-xs text-stone-500">This will clear active bed entries and reset shift tallies to zero.</p>
+        </div>
+      </div>
+      <div class="flex items-center justify-end gap-2 pt-2 border-t border-stone-100">
+        <button type="button" onclick="closeResetConfirmModal()" class="px-3.5 py-1.5 rounded-xl border border-stone-300 text-stone-600 font-bold text-xs hover:bg-stone-100">Cancel</button>
+        <button type="button" onclick="confirmResetAllData()" class="px-4 py-1.5 rounded-xl bg-rose-600 text-white font-bold text-xs hover:bg-rose-700 shadow">Reset Form</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: CONFIRM CLEAR ARCHIVE -->
+  <div id="clearArchiveConfirmModal" class="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-xs hidden items-center justify-center p-3 sm:p-5">
+    <div class="bg-white border border-stone-200 rounded-2xl max-w-sm w-full p-5 space-y-4 shadow-2xl">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center flex-shrink-0"><i data-lucide="trash-2" class="w-5 h-5"></i></div>
+        <div>
+          <h3 class="text-sm font-bold text-stone-900">Clear Entire Registry?</h3>
+          <p class="text-xs text-stone-500">This will permanently delete all archived shift handovers.</p>
+        </div>
+      </div>
+      <div class="flex items-center justify-end gap-2 pt-2 border-t border-stone-100">
+        <button type="button" onclick="closeClearArchiveConfirmModal()" class="px-3.5 py-1.5 rounded-xl border border-stone-300 text-stone-600 font-bold text-xs hover:bg-stone-100">Cancel</button>
+        <button type="button" onclick="confirmClearAllRegistry()" class="px-4 py-1.5 rounded-xl bg-rose-600 text-white font-bold text-xs hover:bg-rose-700 shadow">Delete Everything</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: CLINICAL FAQ GUIDE -->
+  <div id="faqModal" class="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-xs hidden items-center justify-center p-3 sm:p-5">
+    <div class="bg-white border border-stone-200 rounded-2xl max-w-4xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+      <div class="px-5 py-4 bg-[#fbf9f4] border-b border-stone-200 flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-xl bg-amber-600 text-white flex items-center justify-center"><i data-lucide="help-circle" class="w-4 h-4"></i></div>
+          <div>
+            <h3 class="text-sm font-extrabold uppercase text-stone-900">DCR Suite Clinical Guide &amp; FAQ</h3>
+            <p class="text-[11px] text-stone-500">Official Standard Operating Procedures &amp; Dashboard Operations</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeFaqModal()" class="p-1.5 text-stone-400 hover:text-stone-700 rounded-lg hover:bg-stone-200 transition"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+
+      <div class="p-4 border-b border-stone-100 bg-stone-50 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+        <div class="relative w-full sm:w-80">
+          <i data-lucide="search" class="w-4 h-4 absolute left-3 top-2.5 text-stone-400"></i>
+          <input type="text" id="faqSearchInput" placeholder="Search FAQs..." oninput="filterFaqItems(this.value)" class="w-full bg-white border border-stone-300 rounded-xl pl-9 pr-3 py-2 text-xs focus:outline-none">
+        </div>
+        <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
+          <button type="button" onclick="expandAllFaqs()" class="px-3 py-1.5 bg-stone-200 hover:bg-stone-300 font-bold rounded-lg text-stone-700 transition">Expand All</button>
+          <button type="button" onclick="collapseAllFaqs()" class="px-3 py-1.5 bg-stone-200 hover:bg-stone-300 font-bold rounded-lg text-stone-700 transition">Collapse All</button>
+        </div>
+      </div>
+
+      <div id="faqContentContainer" class="flex-1 overflow-y-auto p-4 sm:p-6 space-y-5 text-xs text-stone-800 leading-relaxed">
+        <div class="faq-category space-y-3">
+          <div class="flex items-center gap-2 pb-1.5 border-b border-amber-200 text-amber-900 font-extrabold text-xs uppercase tracking-wide">
+            <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+            <span>Category 1: Shift Workflow &amp; WhatsApp Security</span>
+          </div>
+          <details class="faq-item group bg-stone-50 border border-stone-200 rounded-xl p-3 cursor-pointer">
+            <summary class="font-bold text-stone-900 flex items-center justify-between gap-2 list-none">
+              <span>Q1: Why is the WhatsApp button locked before completing Sign Off?</span>
+              <i data-lucide="chevron-down" class="w-4 h-4 text-stone-400 group-open:rotate-180 transition"></i>
+            </summary>
+            <div class="mt-2 text-stone-600 border-t border-stone-200/60 pt-2 space-y-1">
+              <p>The locked state prevents premature or unverified drafts from being dispatched to department WhatsApp groups before official sign-off.</p>
+            </div>
+          </details>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toastContainer" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <!-- JAVASCRIPT APPLICATION LOGIC & REAL-TIME CLOUD ENGINE -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    /* DIRECT EMBEDDED FIREBASE CONFIGURATION */
+    const firebaseConfig = {
+      apiKey: "AIzaSyB4kj18VszLgSBrTIYs46GXDZprDECe5v4",
+      authDomain: "dcrcensus.firebaseapp.com",
+      projectId: "dcrcensus",
+      storageBucket: "dcrcensus.firebasestorage.app",
+      messagingSenderId: "631732341488",
+      appId: "1:631732341488:web:9649de6efa06e7b36e9035",
+      measurementId: "G-ZQ9GR7MGJ6"
+    };
+
+    const BEDS_CONFIG = [
+      { key: 'dcr_1', name: 'DCR 1', category: 'DCR', zoneBadge: '🔴 RED ZONE • DCR RESUS', zoneColor: 'rose' },
+      { key: 'dcr_2', name: 'DCR 2', category: 'DCR', zoneBadge: '🔴 RED ZONE • DCR RESUS', zoneColor: 'rose' },
+      { key: 'sd_1', name: 'STEPDOWN 1', category: 'STEPDOWN', zoneBadge: '🟡 YELLOW ZONE • STEPDOWN', zoneColor: 'amber' },
+      { key: 'sd_2', name: 'STEPDOWN 2', category: 'STEPDOWN', zoneBadge: '🟡 YELLOW ZONE • STEPDOWN', zoneColor: 'amber' },
+      { key: 'sd_3', name: 'STEPDOWN 3', category: 'STEPDOWN', zoneBadge: '🟡 YELLOW ZONE • STEPDOWN', zoneColor: 'amber' },
+      { key: 'sd_4', name: 'STEPDOWN 4', category: 'STEPDOWN', zoneBadge: '🟡 YELLOW ZONE • STEPDOWN', zoneColor: 'amber' },
+      { key: 'ext_1', name: 'DCR Ext 1', category: 'EXT', zoneBadge: '🔵 BLUE ZONE • EXT BAY', zoneColor: 'sky' },
+      { key: 'ext_2', name: 'DCR Ext 2', category: 'EXT', zoneBadge: '🔵 BLUE ZONE • EXT BAY', zoneColor: 'sky' },
+      { key: 'ext_3', name: 'DCR Ext 3', category: 'EXT', zoneBadge: '🔵 BLUE ZONE • EXT BAY', zoneColor: 'sky' },
+      { key: 'ext_4', name: 'DCR Ext 4', category: 'EXT', zoneBadge: '🔵 BLUE ZONE • EXT BAY', zoneColor: 'sky' },
+    ];
+
+    let currentShift = 'Morning';
+    let currentShiftDate = '';
+    let currentZoneFilter = 'ALL';
+    let bedsData = {};
+    let censusData = { carryForward: 0, newCase: 0, ot: 0, transferOut: 0, death: 0, admit: 0, aor: 0, discharge: 0, pending: 0, dcrExt: 0 };
+    let admitList = [];
+    let monthlyRegistry = [];
+    let rosterState = { shiftDate: '', consultant: '', physician: '', penyelia: '', mo: '', ho: '', ma: '', sn: '', ppk: '' };
+    let isShiftSignedOff = false;
+    let lastSignedOffHandoverText = '';
+    let activeOcrBedKey = null;
+    let cameraStream = null;
+
+    let db = null;
+    let auth = null;
+    let isFirebaseReady = false;
+    let isLocalUpdate = false;
+    const appId = 'dcr-suite-app';
+
+    function getTodayIsoDateString() {
+      const now = new Date();
+      const y = now.getFullYear();
+      const m = String(now.getMonth() + 1).padStart(2, '0');
+      const d = String(now.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    }
+
+    function formatDisplayDate(isoDateStr) {
+      if (!isoDateStr) return '-';
+      try {
+        const parts = isoDateStr.split('-');
+        if (parts.length === 3) {
+          const d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+          return new Intl.DateTimeFormat('en-MY', { day: '2-digit', month: 'short', year: 'numeric' }).format(d);
+        }
+      } catch (e) {}
+      return isoDateStr;
+    }
+
+    function initBedState() {
+      BEDS_CONFIG.forEach(b => {
+        if (!bedsData[b.key]) {
+          bedsData[b.key] = {
+            isOccupied: false, id: '', name: '', age: '', gender: 'Male', transferFrom: '', transferTime: '', diagnosis: '', oxygen: '', status: '', plan: '',
+            kpi: { polytrauma: false, tbi: false, pelvis: false, shock: false }, txa: { given: false, timestamp: '' }
+          };
+        }
+      });
+    }
+
+    function loadLocalState() {
+      currentShiftDate = getTodayIsoDateString();
+      try { const savedBeds = localStorage.getItem('dcr_beds_data'); if (savedBeds) bedsData = JSON.parse(savedBeds); } catch (e) { bedsData = {}; }
+      initBedState();
+      try { const savedCensus = localStorage.getItem('dcr_census'); if (savedCensus) censusData = { ...censusData, ...JSON.parse(savedCensus) }; } catch (e) {}
+      try { const savedAdmit = localStorage.getItem('dcr_admits'); if (savedAdmit) admitList = JSON.parse(savedAdmit); } catch (e) { admitList = []; }
+      try { const savedRegistry = localStorage.getItem('trauma_monthly_registry'); if (savedRegistry) monthlyRegistry = JSON.parse(savedRegistry); } catch (e) { monthlyRegistry = []; }
+      try {
+        const savedRoster = localStorage.getItem('dcr_roster');
+        if (savedRoster) {
+          const r = JSON.parse(savedRoster);
+          if (r.shift) currentShift = r.shift;
+          if (r.shiftDate) currentShiftDate = r.shiftDate;
+          rosterState = { ...rosterState, ...r };
+          applyRosterToForm();
+        }
+      } catch (e) {}
+      const datePicker = document.getElementById('shiftDateInput');
+      if (datePicker) datePicker.value = currentShiftDate || getTodayIsoDateString();
+    }
+
+    function applyRosterToForm() {
+      if (document.getElementById('shiftDateInput')) document.getElementById('shiftDateInput').value = rosterState.shiftDate || currentShiftDate || getTodayIsoDateString();
+      if (document.getElementById('rosterConsultant')) document.getElementById('rosterConsultant').value = rosterState.consultant || '';
+      if (document.getElementById('rosterPhysician')) document.getElementById('rosterPhysician').value = rosterState.physician || '';
+      if (document.getElementById('rosterPenyelia')) document.getElementById('rosterPenyelia').value = rosterState.penyelia || '';
+      if (document.getElementById('rosterMO')) document.getElementById('rosterMO').value = rosterState.mo || '';
+      if (document.getElementById('rosterHO')) document.getElementById('rosterHO').value = rosterState.ho || '';
+      if (document.getElementById('rosterMA')) document.getElementById('rosterMA').value = rosterState.ma || '';
+      if (document.getElementById('rosterSN')) document.getElementById('rosterSN').value = rosterState.sn || '';
+      if (document.getElementById('rosterPPK')) document.getElementById('rosterPPK').value = rosterState.ppk || '';
+    }
+
+    function saveLocalBeds() { try { localStorage.setItem('dcr_beds_data', JSON.stringify(bedsData)); } catch (e) {} }
+    function saveLocalCensus() { try { localStorage.setItem('dcr_census', JSON.stringify(censusData)); } catch (e) {} }
+    function saveLocalAdmits() { try { localStorage.setItem('dcr_admits', JSON.stringify(admitList)); } catch (e) {} }
+    function saveMonthlyRegistry() { try { localStorage.setItem('trauma_monthly_registry', JSON.stringify(monthlyRegistry)); } catch (e) {} }
+
+    function saveLocalRoster() {
+      const dateVal = document.getElementById('shiftDateInput')?.value || currentShiftDate || getTodayIsoDateString();
+      currentShiftDate = dateVal;
+      rosterState = {
+        shift: currentShift, shiftDate: dateVal,
+        consultant: document.getElementById('rosterConsultant')?.value || '',
+        physician: document.getElementById('rosterPhysician')?.value || '',
+        penyelia: document.getElementById('rosterPenyelia')?.value || '',
+        mo: document.getElementById('rosterMO')?.value || '',
+        ho: document.getElementById('rosterHO')?.value || '',
+        ma: document.getElementById('rosterMA')?.value || '',
+        sn: document.getElementById('rosterSN')?.value || '',
+        ppk: document.getElementById('rosterPPK')?.value || ''
+      };
+      try { localStorage.setItem('dcr_roster', JSON.stringify(rosterState)); } catch (e) {}
+      pushCloudUpdate('roster', rosterState);
+    }
+
+    function onShiftDateChange(newDate) {
+      currentShiftDate = newDate;
+      saveLocalRoster();
+      showToast(`Shift date updated: ${formatDisplayDate(newDate)}`, 'info');
+    }
+
+    /* FIREBASE INITIALIZATION & REAL-TIME LISTENER */
+    async function initFirebaseCloudSync() {
+      const syncStatusText = document.getElementById('syncStatusText');
+      const activeUserDisplay = document.getElementById('activeUserDisplay');
+
+      try {
+        const app = initializeApp(firebaseConfig);
+        auth = getAuth(app);
+        db = getFirestore(app);
+
+        await signInAnonymously(auth);
+
+        const userId = auth.currentUser?.uid || 'user_' + Math.random().toString(36).substring(2, 9);
+        if (activeUserDisplay) activeUserDisplay.textContent = userId.substring(0, 10);
+        if (syncStatusText) syncStatusText.textContent = 'Live Synced';
+
+        isFirebaseReady = true;
+        const liveDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'dcr_live_state', 'current');
+
+        onSnapshot(liveDocRef, (snapshot) => {
+          if (!snapshot.exists() || isLocalUpdate) return;
+          const data = snapshot.data();
+          if (!data) return;
+
+          if (data.beds) { bedsData = data.beds; saveLocalBeds(); renderBeds(); }
+          if (data.census) {
+            censusData = data.census; saveLocalCensus();
+            Object.keys(censusData).forEach(k => { const el = document.getElementById(`c_${k}`); if (el) el.value = censusData[k]; });
+          }
+          if (data.admits) { admitList = data.admits; saveLocalAdmits(); renderAdmits(); }
+          if (data.roster) {
+            rosterState = data.roster;
+            if (data.roster.shift) { currentShift = data.roster.shift; highlightShiftTab(currentShift); }
+            if (data.roster.shiftDate) currentShiftDate = data.roster.shiftDate;
+            applyRosterToForm();
+            try { localStorage.setItem('dcr_roster', JSON.stringify(rosterState)); } catch (e) {}
+          }
+          if (data.signoff) {
+            isShiftSignedOff = data.signoff.isSignedOff || false;
+            lastSignedOffHandoverText = data.signoff.handoverText || '';
+            updateWhatsAppButtonState();
+            const badge = document.getElementById('signOffBadge');
+            if (badge) {
+              if (isShiftSignedOff) {
+                badge.className = 'text-xs font-bold px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300';
+                badge.textContent = `Signed Off (${data.signoff.shift || currentShift}) by ${data.signoff.staff || 'Staff'}`;
+              } else {
+                badge.className = 'text-xs font-bold px-3 py-1 rounded-full bg-amber-100 text-amber-800 border border-amber-200';
+                badge.textContent = 'Shift In Progress (Pending Sign Off)';
+              }
+            }
+          }
+        }, (err) => { console.warn("Firestore sync error:", err); if (syncStatusText) syncStatusText.textContent = 'Sync Paused'; });
+      } catch (err) {
+        console.warn("Cloud connection error, running locally:", err);
+        if (syncStatusText) syncStatusText.textContent = 'Local Standalone';
+      }
+    }
+
+    async function pushCloudUpdate(section, payload) {
+      if (!isFirebaseReady || !db || !auth?.currentUser) return;
+      try {
+        isLocalUpdate = true;
+        const liveDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'dcr_live_state', 'current');
+        const updateObj = { updatedAt: new Date().toISOString(), updatedBy: auth.currentUser.uid };
+        updateObj[section] = payload;
+        await setDoc(liveDocRef, updateObj, { merge: true });
+        setTimeout(() => { isLocalUpdate = false; }, 400);
+      } catch (err) {
+        isLocalUpdate = false;
+        console.warn("Failed pushing cloud update:", err);
+      }
+    }
+
+    function renderBeds() {
+      const container = document.getElementById('bedsGridContainer');
+      if (!container) return;
+
+      const filteredBeds = BEDS_CONFIG.filter(b => {
+        if (currentZoneFilter === 'ALL') return true;
+        return b.category === currentZoneFilter;
+      });
+
+      container.innerHTML = filteredBeds.map(b => {
+        const data = bedsData[b.key] || {};
+        const isOcc = data.isOccupied === true;
+
+        let cardBgClass = 'bg-[#fff1f2] border-rose-300 ring-rose-200';
+        let headerBgClass = 'bg-rose-100/80 text-rose-950 border-rose-200';
+        let camBtnClass = 'bg-rose-600 hover:bg-rose-700 text-white';
+
+        if (b.category === 'STEPDOWN') {
+          cardBgClass = 'bg-[#fffbeb] border-amber-300 ring-amber-200';
+          headerBgClass = 'bg-amber-100/80 text-amber-950 border-amber-200';
+          camBtnClass = 'bg-amber-600 hover:bg-amber-700 text-white';
+        } else if (b.category === 'EXT') {
+          cardBgClass = 'bg-[#f0f9ff] border-sky-300 ring-sky-200';
+          headerBgClass = 'bg-sky-100/80 text-sky-950 border-sky-200';
+          camBtnClass = 'bg-sky-600 hover:bg-sky-700 text-white';
+        }
+
+        return `
+          <div class="border-2 rounded-2xl shadow-xs overflow-hidden transition ${cardBgClass}">
+            <div class="px-4 py-2.5 border-b flex items-center justify-between ${headerBgClass}">
+              <div class="flex items-center gap-2">
+                <span class="font-extrabold text-sm tracking-tight text-stone-900">${b.name}</span>
+                <span class="text-[10px] font-extrabold px-2 py-0.5 rounded-md bg-white/80 border shadow-2xs">${b.zoneBadge}</span>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <button type="button" onclick="toggleBedOccupied('${b.key}')" class="px-2.5 py-1 text-xs font-bold rounded-lg transition flex items-center gap-1 cursor-pointer ${isOcc ? 'bg-rose-600 text-white shadow-xs' : 'bg-white text-stone-600 border border-stone-300 hover:bg-stone-50'}">
+                  <span class="w-2 h-2 rounded-full ${isOcc ? 'bg-white' : 'bg-stone-400'}"></span>
+                  <span>${isOcc ? 'Occupied' : 'Vacant'}</span>
+                </button>
+                <button type="button" onclick="openOcrModal('${b.key}')" class="p-1.5 rounded-lg text-xs font-bold shadow-xs transition cursor-pointer ${camBtnClass}" title="Scan Patient Sticker / ID">
+                  <i data-lucide="camera" class="w-3.5 h-3.5"></i>
+                </button>
+                <button type="button" onclick="copySingleBedDetails('${b.key}')" class="p-1.5 rounded-lg bg-white/90 text-stone-700 hover:bg-white border border-stone-200 text-xs transition cursor-pointer" title="Copy Bay Details">
+                  <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                </button>
+                <button type="button" onclick="resetSingleBed('${b.key}')" class="p-1.5 rounded-lg bg-white/90 text-stone-500 hover:text-rose-600 border border-stone-200 text-xs transition cursor-pointer" title="Clear Bay">
+                  <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                </button>
+              </div>
+            </div>
+
+            <div class="p-3.5 space-y-3 bg-white/70">
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <div class="sm:col-span-2">
+                  <label class="block text-[10px] font-extrabold uppercase text-stone-600 mb-0.5">Patient ID / SB No.</label>
+                  <input type="text" id="${b.key}_id" value="${data.id || ''}" placeholder="e.g., SB 123456" oninput="updateBedField('${b.key}', 'id', this.value)" class="w-full bg-white border border-stone-300 rounded-xl px-2.5 py-1.5 text-xs font-semibold focus:outline-none">
+                </div>
+                <div>
+                  <label class="block text-[10px] font-extrabold uppercase text-stone-600 mb-0.5">Age &amp; Gender</label>
+                  <div class="flex items-center gap-1">
+                    <input type="text" id="${b.key}_age" value="${data.age || ''}" placeholder="Age" oninput="updateBedField('${b.key}', 'age', this.value)" class="w-14 bg-white border border-stone-300 rounded-xl px-2 py-1.5 text-xs text-center font-semibold focus:outline-none">
+                    <select id="${b.key}_gender" onchange="updateBedField('${b.key}', 'gender', this.value)" class="flex-1 bg-white border border-stone-300 rounded-xl px-1.5 py-1.5 text-xs font-semibold focus:outline-none">
+                      <option value="Male" ${data.gender === 'Male' ? 'selected' : ''}>M</option>
+                      <option value="Female" ${data.gender === 'Female' ? 'selected' : ''}>F</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-[10px] font-extrabold uppercase text-stone-700 mb-0.5">Patient Name</label>
+                <input type="text" id="${b.key}_name" value="${data.name || ''}" placeholder="FULL PATIENT NAME" oninput="this.value = this.value.toUpperCase(); updateBedField('${b.key}', 'name', this.value);" class="w-full bg-white border border-stone-300 rounded-xl px-2.5 py-1.5 text-xs font-extrabold text-stone-900 uppercase focus:outline-none">
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 bg-stone-50/80 p-2.5 rounded-xl border border-stone-200/90 shadow-2xs">
+                <div class="sm:col-span-2">
+                  <label class="block text-[10px] font-extrabold uppercase text-stone-700 mb-0.5">Transfer In From</label>
+                  <input type="text" id="${b.key}_transferFrom" value="${data.transferFrom || ''}" placeholder="e.g., Red Zone ED" oninput="updateBedField('${b.key}', 'transferFrom', this.value)" class="w-full bg-white border border-stone-300 rounded-lg px-2.5 py-1.5 text-xs font-semibold focus:outline-none">
+                </div>
+                <div>
+                  <label class="block text-[10px] font-extrabold uppercase text-stone-700 mb-0.5">Time Transfer In</label>
+                  <div class="flex items-center gap-1">
+                    <input type="time" id="${b.key}_transferTime" value="${data.transferTime || ''}" onchange="updateBedField('${b.key}', 'transferTime', this.value)" class="flex-1 bg-white border border-stone-300 rounded-lg px-1.5 py-1.5 text-xs font-mono-code font-bold text-stone-800 focus:outline-none">
+                    <button type="button" onclick="stampBedTransferNow('${b.key}')" class="px-2 py-1.5 bg-stone-800 hover:bg-stone-900 text-white text-[10px] font-bold rounded-lg cursor-pointer">Now</button>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-[10px] font-extrabold uppercase text-stone-600 mb-0.5">Diagnosis / Mechanism of Injury</label>
+                <textarea id="${b.key}_diagnosis" rows="2" placeholder="Diagnosis..." oninput="updateBedField('${b.key}', 'diagnosis', this.value)" class="w-full bg-white border border-stone-300 rounded-xl px-2.5 py-1.5 text-xs font-medium focus:outline-none resize-none">${data.diagnosis || ''}</textarea>
+              </div>
+
+              <div class="p-2.5 bg-rose-50/80 border border-rose-200 rounded-xl space-y-1.5">
+                <div class="flex items-center justify-between gap-2">
+                  <label class="flex items-center gap-1.5 cursor-pointer">
+                    <input type="checkbox" ${data.txa?.given ? 'checked' : ''} onchange="toggleBedTxa('${b.key}', this.checked)" class="rounded text-rose-600 w-4 h-4">
+                    <span class="text-xs font-extrabold text-rose-950">Tranexemic Acid (TXA)</span>
+                  </label>
+                  <div class="flex items-center gap-1.5">
+                    <span class="text-[10px] font-bold text-rose-800 uppercase">Time:</span>
+                    <input type="time" id="${b.key}_txaTime" value="${data.txa?.timestamp || ''}" onchange="updateBedTxaTime('${b.key}', this.value)" class="bg-white border border-rose-300 rounded-lg px-1.5 py-0.5 text-xs font-mono-code font-bold text-rose-900">
+                    <button type="button" onclick="stampBedTxaNow('${b.key}')" class="px-2 py-0.5 bg-rose-600 hover:bg-rose-700 text-white text-[10px] font-bold rounded-lg cursor-pointer">Now</button>
+                  </div>
+                </div>
+                <div id="${b.key}_txaWarning" class="${data.txa?.given ? 'block' : 'hidden'} text-[11px] font-black text-rose-600 bg-rose-100/90 border border-rose-300 rounded-lg px-2 py-1 tracking-tight flex items-center gap-1">
+                  <span>( ⚠ TXA must be given within 60 minutes of transfer-in)</span>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div>
+                  <label class="block text-[10px] font-extrabold uppercase text-stone-700 mb-0.5">Oxygen Therapy</label>
+                  <input type="text" id="${b.key}_oxygen" list="oxygenOptions" value="${data.oxygen || ''}" placeholder="Oxygen..." oninput="updateBedField('${b.key}', 'oxygen', this.value)" class="w-full bg-white border border-stone-300 rounded-xl px-2.5 py-1.5 text-xs font-semibold focus:outline-none">
+                </div>
+                <div>
+                  <label class="block text-[10px] font-extrabold uppercase text-stone-700 mb-0.5">Clinical Status</label>
+                  <input type="text" id="${b.key}_status" value="${data.status || (isOcc ? 'Occupied' : 'Vacant')}" placeholder="Status..." oninput="updateBedField('${b.key}', 'status', this.value)" class="w-full bg-white border border-stone-300 rounded-xl px-2.5 py-1.5 text-xs font-semibold focus:outline-none">
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-[10px] font-extrabold uppercase text-stone-600 mb-0.5">Disposition / Clinical Plan</label>
+                <input type="text" id="${b.key}_plan" value="${data.plan || ''}" placeholder="Plan..." oninput="updateBedField('${b.key}', 'plan', this.value)" class="w-full bg-white border border-stone-300 rounded-xl px-2.5 py-1.5 text-xs font-medium focus:outline-none">
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function updateBedField(bedKey, field, val) {
+      if (!bedsData[bedKey]) initBedState();
+      bedsData[bedKey][field] = val;
+      if ((field === 'id' || field === 'name') && val.trim() !== '') bedsData[bedKey].isOccupied = true;
+      saveLocalBeds();
+      pushCloudUpdate('beds', bedsData);
+    }
+
+    function toggleBedOccupied(bedKey) {
+      if (!bedsData[bedKey]) initBedState();
+      bedsData[bedKey].isOccupied = !bedsData[bedKey].isOccupied;
+      bedsData[bedKey].status = bedsData[bedKey].isOccupied ? 'Occupied' : 'Vacant';
+      saveLocalBeds();
+      pushCloudUpdate('beds', bedsData);
+      renderBeds();
+    }
+
+    function toggleBedTxa(bedKey, isChecked) {
+      if (!bedsData[bedKey]) initBedState();
+      if (!bedsData[bedKey].txa) bedsData[bedKey].txa = {};
+      bedsData[bedKey].txa.given = isChecked;
+      if (isChecked && !bedsData[bedKey].txa.timestamp) bedsData[bedKey].txa.timestamp = new Date().toTimeString().substring(0, 5);
+      saveLocalBeds();
+      pushCloudUpdate('beds', bedsData);
+      renderBeds();
+    }
+
+    function updateBedTxaTime(bedKey, timeStr) {
+      if (!bedsData[bedKey]) initBedState();
+      if (!bedsData[bedKey].txa) bedsData[bedKey].txa = {};
+      bedsData[bedKey].txa.timestamp = timeStr;
+      saveLocalBeds();
+      pushCloudUpdate('beds', bedsData);
+    }
+
+    function stampBedTxaNow(bedKey) {
+      if (!bedsData[bedKey]) initBedState();
+      if (!bedsData[bedKey].txa) bedsData[bedKey].txa = {};
+      bedsData[bedKey].txa.given = true;
+      bedsData[bedKey].txa.timestamp = new Date().toTimeString().substring(0, 5);
+      saveLocalBeds();
+      pushCloudUpdate('beds', bedsData);
+      renderBeds();
+      showToast(`TXA for ${bedKey.toUpperCase()} stamped.`, 'info');
+    }
+
+    function stampBedTransferNow(bedKey) {
+      if (!bedsData[bedKey]) initBedState();
+      const timeNow = new Date().toTimeString().substring(0, 5);
+      bedsData[bedKey].transferTime = timeNow;
+      saveLocalBeds();
+      pushCloudUpdate('beds', bedsData);
+      renderBeds();
+      showToast(`Transfer time set to ${timeNow}.`, 'info');
+    }
+
+    function resetSingleBed(bedKey) {
+      if (!bedsData[bedKey]) return;
+      bedsData[bedKey] = {
+        isOccupied: false, id: '', name: '', age: '', gender: 'Male', transferFrom: '', transferTime: '', diagnosis: '', oxygen: '', status: 'VACANT', plan: '',
+        kpi: { polytrauma: false, tbi: false, pelvis: false, shock: false }, txa: { given: false, timestamp: '' }
+      };
+      saveLocalBeds();
+      pushCloudUpdate('beds', bedsData);
+      renderBeds();
+      showToast(`Bay ${bedKey.toUpperCase()} cleared.`, 'info');
+    }
+
+    function copySingleBedDetails(bedKey) {
+      const b = bedsData[bedKey];
+      if (!b) return;
+      const cfg = BEDS_CONFIG.find(x => x.key === bedKey);
+      const title = cfg ? cfg.name : bedKey.toUpperCase();
+      const txaStatus = b.txa?.given ? `Given${b.txa.timestamp ? ' (' + b.txa.timestamp + ')' : ''}` : '-';
+      const text = `*${title}:*\n• *SB :* ${b.id || '-'} ${b.name ? '- ' + b.name : ''}\n• *Diagnosis :* ${b.diagnosis || '-'}\n• *Transfer in from :* ${b.transferFrom || '-'}\n• *Time transfer in :* ${b.transferTime || '-'}\n• *Tranexemic acid :* ${txaStatus}\n• *Oxygen therapy :* ${b.oxygen || '-'}\n• *Disposition :* ${b.plan || '-'}\n• *Status :* ${b.status || (b.isOccupied ? 'Occupied' : 'VACANT')}`;
+      copyTextToClipboard(text);
+      showToast(`Bay details copied.`, 'success');
+    }
+
+    function filterZone(zone) {
+      currentZoneFilter = zone;
+      ['ALL', 'DCR', 'STEPDOWN', 'EXT'].forEach(z => {
+        const btn = document.getElementById(`filterBtn_${z}`);
+        if (!btn) return;
+        if (z === zone) btn.className = 'px-2.5 py-1 text-xs font-bold rounded-lg bg-stone-900 text-white shadow-xs transition';
+        else btn.className = 'px-2.5 py-1 text-xs font-bold rounded-lg bg-stone-100 text-stone-700 hover:bg-stone-200 transition';
+      });
+      renderBeds();
+    }
+
+    function adjustCensus(field, delta) {
+      const current = parseInt(censusData[field], 10) || 0;
+      const nextVal = Math.max(0, current + delta);
+      censusData[field] = nextVal;
+      const el = document.getElementById(`c_${field}`);
+      if (el) el.value = nextVal;
+      saveLocalCensus();
+      pushCloudUpdate('census', censusData);
+    }
+
+    function updateCensusField(field, val) {
+      censusData[field] = parseInt(val, 10) || 0;
+      saveLocalCensus();
+      pushCloudUpdate('census', censusData);
+    }
+
+    function highlightShiftTab(shiftName) {
+      ['Morning', 'Evening', 'Night'].forEach(s => {
+        const btn = document.getElementById(`shiftBtn_${s}`);
+        if (!btn) return;
+        if (s === shiftName) btn.className = 'px-3 py-1 rounded-lg text-xs font-extrabold bg-stone-900 text-white shadow-xs transition';
+        else btn.className = 'px-3 py-1 rounded-lg text-xs font-bold text-stone-600 hover:text-stone-900 transition';
+      });
+    }
+
+    function setShift(shiftName) {
+      currentShift = shiftName;
+      highlightShiftTab(shiftName);
+      saveLocalRoster();
+      showToast(`Shift switched to: ${shiftName}`, 'info');
+    }
+
+    function renderAdmits() {
+      const tbody = document.getElementById('admitTableBody');
+      if (!tbody) return;
+      if (!Array.isArray(admitList) || admitList.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" class="py-4 text-center text-stone-400 italic">No ward admissions recorded for this shift.</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = admitList.map((a, i) => `
+        <tr class="hover:bg-stone-50/80">
+          <td class="py-2 px-3 font-bold text-stone-800">${a.bed || '-'}</td>
+          <td class="py-2 px-3 font-bold uppercase text-stone-900">${a.name || '-'}</td>
+          <td class="py-2 px-3 font-mono-code">${a.id || '-'}</td>
+          <td class="py-2 px-3 font-semibold text-emerald-800">${a.ward || '-'}</td>
+          <td class="py-2 px-3">${a.discipline || '-'}</td>
+          <td class="py-2 px-3 text-stone-600">${a.diagnosis || '-'}</td>
+          <td class="py-2 px-3 text-center">
+            <button type="button" onclick="deleteAdmissionRow(${i})" class="text-rose-600 hover:text-rose-800 cursor-pointer"><i data-lucide="trash" class="w-3.5 h-3.5 inline"></i></button>
+          </td>
+        </tr>
+      `).join('');
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function openAdmissionModal() {
+      const modal = document.getElementById('addAdmissionModal');
+      const selectBed = document.getElementById('modalAdmitBedSelect');
+      if (modal) {
+        if (selectBed) {
+          selectBed.innerHTML = '<option value="">-- Choose Origin Bay --</option>' + 
+            BEDS_CONFIG.map(b => {
+              const bedState = bedsData[b.key];
+              const label = bedState?.isOccupied ? `${b.name} (${bedState.name || 'Occupied'})` : `${b.name} (Vacant)`;
+              return `<option value="${b.key}">${label}</option>`;
+            }).join('');
+        }
+        document.getElementById('modalAdmitBed').value = '';
+        document.getElementById('modalAdmitName').value = '';
+        document.getElementById('modalAdmitId').value = '';
+        document.getElementById('modalAdmitWard').value = '';
+        document.getElementById('modalAdmitDiscipline').value = 'Ortho';
+        document.getElementById('modalAdmitDiagnosis').value = '';
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+      }
+    }
+
+    function closeAdmissionModal() {
+      const modal = document.getElementById('addAdmissionModal');
+      if (modal) { modal.classList.add('hidden'); modal.classList.remove('flex'); }
+    }
+
+    function onAdmissionBayChange(selectedBedKey) {
+      if (!selectedBedKey || !bedsData[selectedBedKey]) return;
+      const cfg = BEDS_CONFIG.find(b => b.key === selectedBedKey);
+      if (cfg) document.getElementById('modalAdmitBed').value = cfg.name;
+      const bed = bedsData[selectedBedKey];
+      if (bed.name) document.getElementById('modalAdmitName').value = bed.name.toUpperCase();
+      if (bed.id) document.getElementById('modalAdmitId').value = bed.id;
+      if (bed.diagnosis) document.getElementById('modalAdmitDiagnosis').value = bed.diagnosis;
+    }
+
+    function submitAdmissionModal() {
+      const selectBed = document.getElementById('modalAdmitBedSelect');
+      const targetKey = selectBed?.value;
+      const targetConfig = BEDS_CONFIG.find(b => b.key === targetKey);
+      const bedLabel = targetConfig ? targetConfig.name : (document.getElementById('modalAdmitBed')?.value.trim() || 'DCR Resus');
+      const nameVal = document.getElementById('modalAdmitName')?.value.trim();
+      const wardVal = document.getElementById('modalAdmitWard')?.value.trim();
+
+      if (!nameVal || !wardVal) {
+        showToast('Please provide patient name and target ward.', 'error');
+        return;
+      }
+
+      admitList.push({
+        bed: bedLabel,
+        name: nameVal.toUpperCase(),
+        id: document.getElementById('modalAdmitId')?.value.trim() || '-',
+        ward: wardVal,
+        discipline: document.getElementById('modalAdmitDiscipline')?.value || 'Ortho',
+        diagnosis: document.getElementById('modalAdmitDiagnosis')?.value.trim() || '-'
+      });
+      saveLocalAdmits();
+      pushCloudUpdate('admits', admitList);
+      adjustCensus('admit', 1);
+
+      if (document.getElementById('modalAdmitAutoVacate')?.checked && targetKey && bedsData[targetKey]) {
+        resetSingleBed(targetKey);
+      }
+
+      renderAdmits();
+      closeAdmissionModal();
+      showToast(`Admitted ${nameVal.toUpperCase()} to ${wardVal}`, 'success');
+    }
+
+    function deleteAdmissionRow(index) {
+      if (admitList && admitList[index]) {
+        admitList.splice(index, 1);
+        saveLocalAdmits();
+        pushCloudUpdate('admits', admitList);
+        renderAdmits();
+        showToast('Admission entry removed.', 'info');
+      }
+    }
+
+    function openFaqModal() { document.getElementById('faqModal')?.classList.remove('hidden'); document.getElementById('faqModal')?.classList.add('flex'); }
+    function closeFaqModal() { document.getElementById('faqModal')?.classList.add('hidden'); document.getElementById('faqModal')?.classList.remove('flex'); }
+    function expandAllFaqs() { document.querySelectorAll('#faqContentContainer details').forEach(d => d.open = true); }
+    function collapseAllFaqs() { document.querySelectorAll('#faqContentContainer details').forEach(d => d.open = false); }
+    function filterFaqItems(q) {
+      const query = (q || '').toLowerCase().trim();
+      document.querySelectorAll('#faqContentContainer .faq-item').forEach(item => {
+        item.style.display = (!query || item.textContent.toLowerCase().includes(query)) ? 'block' : 'none';
+      });
+    }
+
+    function buildHandoverReportText() {
+      const shiftDateVal = document.getElementById('shiftDateInput')?.value || currentShiftDate || getTodayIsoDateString();
+      const rost = {
+        consultant: document.getElementById('rosterConsultant')?.value.trim() || rosterState.consultant || '-',
+        physician: document.getElementById('rosterPhysician')?.value.trim() || rosterState.physician || '-',
+        penyelia: document.getElementById('rosterPenyelia')?.value.trim() || rosterState.penyelia || '-',
+        mo: document.getElementById('rosterMO')?.value.trim() || rosterState.mo || '-',
+        ho: document.getElementById('rosterHO')?.value.trim() || rosterState.ho || '-',
+        ma: document.getElementById('rosterMA')?.value.trim() || rosterState.ma || '-',
+        sn: document.getElementById('rosterSN')?.value.trim() || rosterState.sn || '-',
+        ppk: document.getElementById('rosterPPK')?.value.trim() || rosterState.ppk || '-',
+      };
+
+      let text = `🏥 *DAMAGE CONTROL RESUSCITATION SUITE (DCR)*\n`;
+      text += `*JABATAN KECEMASAN & TRAUMA • HOSPITAL SUNGAI BULOH*\n`;
+      text += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+      text += `📅 *DATE:* ${formatDisplayDate(shiftDateVal)}\n`;
+      text += `⏰ *SHIFT:* ${currentShift.toUpperCase()}\n`;
+      text += `────────────────────────────\n`;
+      text += `👥 *ON-DUTY TEAM:*\n`;
+      text += `• *CONSULTANT:* ${rost.consultant}\n• *PHYSICIAN:* ${rost.physician}\n• *SUPERVISOR:* ${rost.penyelia}\n• *MO:* ${rost.mo} | *HO:* ${rost.ho}\n• *MA:* ${rost.ma} | *SN:* ${rost.sn} | *PPK:* ${rost.ppk}\n`;
+      text += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+
+      BEDS_CONFIG.forEach(b => {
+        const d = bedsData[b.key] || {};
+        text += `*${b.name}:*\n`;
+        if (d.isOccupied) {
+          text += `• *SB :* ${d.id || '-'} - ${d.name || '-'}\n• *Diagnosis :* ${d.diagnosis || '-'}\n• *Transfer in from :* ${d.transferFrom || '-'}\n• *Status :* 🔴 ${d.status || 'OCCUPIED'}\n\n`;
+        } else {
+          text += `• *Status :* ⚪ VACANT\n\n`;
+        }
+      });
+
+      return text;
+    }
+
+    function build24HourCensusReportText(targetDateIso) {
+      const queryIso = targetDateIso || currentShiftDate || getTodayIsoDateString();
+      let totalNewCases = censusData.newCase || 0;
+      let totalOt = censusData.ot || 0;
+      let totalAdmit = admitList.length || censusData.admit || 0;
+
+      let waText = `🏥 *24-HOUR TRAUMA CENSUS REPORT*\n`;
+      waText += `*DCR SUITE • HOSPITAL SUNGAI BULOH*\n`;
+      waText += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+      waText += `📅 *Date:* ${formatDisplayDate(queryIso)}\n`;
+      waText += `• *New Cases:* ${totalNewCases}\n• *OT:* ${totalOt}\n• *Ward Admits:* ${totalAdmit}\n`;
+      waText += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
+      return waText;
+    }
+
+    function generateAndSend24HourCensusWhatsApp() {
+      const reportText = build24HourCensusReportText(currentShiftDate);
+      copyTextToClipboard(reportText);
+      window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(reportText)}`, '_blank');
+      showToast('24H Census report generated & sent to WhatsApp!', 'success');
+    }
+
+    function executeSignOff() {
+      const signOffStaff = document.getElementById('signOffName')?.value.trim() || 'DCR Staff';
+      const now = new Date();
+      const timestampStr = `${now.toLocaleDateString('en-MY')} ${now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`;
+      document.getElementById('signOffTimestamp').value = timestampStr;
+
+      isShiftSignedOff = true;
+      lastSignedOffHandoverText = buildHandoverReportText();
+      updateWhatsAppButtonState();
+
+      const badge = document.getElementById('signOffBadge');
+      if (badge) {
+        badge.className = 'text-xs font-bold px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300';
+        badge.textContent = `Signed Off (${currentShift}) by ${signOffStaff}`;
+      }
+
+      pushCloudUpdate('signoff', { isSignedOff: true, staff: signOffStaff, timestamp: timestampStr, handoverText: lastSignedOffHandoverText, shift: currentShift });
+      showToast(`Shift signed off & archived!`, 'success');
+    }
+
+    function updateWhatsAppButtonState() {
+      const headerBtn = document.getElementById('headerWhatsAppBtn');
+      const modalBtn = document.getElementById('modalSendWhatsAppBtn');
+      const statusNote = document.getElementById('modalWhatsAppStatusNote');
+
+      if (isShiftSignedOff) {
+        if (headerBtn) {
+          headerBtn.className = 'px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs rounded-xl shadow-md flex items-center gap-1.5 transition cursor-pointer';
+          headerBtn.innerHTML = `<span>WhatsApp</span>`;
+        }
+        if (modalBtn) {
+          modalBtn.className = 'px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs rounded-xl flex items-center gap-1.5 shadow transition cursor-pointer';
+          modalBtn.innerHTML = `<span>WhatsApp</span>`;
+        }
+        if (statusNote) {
+          statusNote.textContent = 'Shift is signed off. Ready to send.';
+          statusNote.className = 'text-[11px] font-semibold text-emerald-700';
+        }
+      }
+    }
+
+    function handleHeaderWhatsAppClick() {
+      if (!isShiftSignedOff) {
+        showToast('WhatsApp is locked! Complete "Sign Off & Archive" first.', 'error');
+        return;
+      }
+      window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(lastSignedOffHandoverText)}`, '_blank');
+    }
+
+    function sendHandoverToWhatsApp() {
+      if (!isShiftSignedOff) {
+        showToast('WhatsApp is locked! Complete "Sign Off & Archive" first.', 'error');
+        return;
+      }
+      window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(lastSignedOffHandoverText)}`, '_blank');
+    }
+
+    function openOcrModal(bedKey) {
+      activeOcrBedKey = bedKey;
+      document.getElementById('ocrModal')?.classList.remove('hidden');
+      document.getElementById('ocrModal')?.classList.add('flex');
+      startCamera();
+    }
+
+    function closeOcrModal() {
+      document.getElementById('ocrModal')?.classList.add('hidden');
+      document.getElementById('ocrModal')?.classList.remove('flex');
+      stopCamera();
+      activeOcrBedKey = null;
+    }
+
+    function startCamera() {
+      const video = document.getElementById('ocrVideo');
+      if (!navigator.mediaDevices?.getUserMedia) return;
+      navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+        .then(stream => { cameraStream = stream; if (video) video.srcObject = stream; })
+        .catch(err => console.warn('Camera error:', err));
+    }
+
+    function stopCamera() {
+      if (cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); cameraStream = null; }
+    }
+
+    function captureAndProcessOcr() {
+      const video = document.getElementById('ocrVideo');
+      const canvas = document.getElementById('ocrCanvas');
+      if (!video || !canvas) return;
+      canvas.width = video.videoWidth || 640;
+      canvas.height = video.videoHeight || 480;
+      canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+      runOcrRecognition(canvas.toDataURL('image/png'));
+    }
+
+    function handleOcrFileUpload(event) {
+      const file = event.target.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = e => runOcrRecognition(e.target.result);
+      reader.readAsDataURL(file);
+    }
+
+    function runOcrRecognition(imageSrc) {
+      const spinner = document.getElementById('ocrSpinner');
+      spinner?.classList.remove('hidden');
+      spinner?.classList.add('flex');
+
+      Tesseract.recognize(imageSrc, 'eng').then(({ data: { text } }) => {
+        spinner?.classList.add('hidden');
+        spinner?.classList.remove('flex');
+        processExtractedOcrText(text);
+      }).catch(err => {
+        spinner?.classList.add('hidden');
+        spinner?.classList.remove('flex');
+        showToast('OCR Error: ' + err.message, 'error');
+      });
+    }
+
+    function processExtractedOcrText(rawText) {
+      if (!activeOcrBedKey) return;
+      const lines = rawText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+      let detectedId = '', detectedName = '';
+
+      for (const line of lines) {
+        if (/(?:SB|RN|MRN)[\s\.:-]*([A-Z0-9\/-]+)/i.test(line)) { detectedId = line; break; }
+      }
+      for (const line of lines) {
+        if (/BIN|BINTI|A\/L|A\/P/i.test(line)) { detectedName = line; break; }
+      }
+
+      if (bedsData[activeOcrBedKey]) {
+        if (detectedId) bedsData[activeOcrBedKey].id = detectedId;
+        if (detectedName) bedsData[activeOcrBedKey].name = detectedName.toUpperCase();
+        bedsData[activeOcrBedKey].isOccupied = true;
+        saveLocalBeds();
+        pushCloudUpdate('beds', bedsData);
+      }
+      renderBeds();
+      closeOcrModal();
+      showToast('OCR Scan completed successfully!', 'success');
+    }
+
+    function openMonthlyRegistryModal() { document.getElementById('monthlyRegistryModal')?.classList.remove('hidden'); document.getElementById('monthlyRegistryModal')?.classList.add('flex'); }
+    function closeMonthlyRegistryModal() { document.getElementById('monthlyRegistryModal')?.classList.add('hidden'); document.getElementById('monthlyRegistryModal')?.classList.remove('flex'); }
+    function openClearArchiveConfirmModal() { document.getElementById('clearArchiveConfirmModal')?.classList.remove('hidden'); document.getElementById('clearArchiveConfirmModal')?.classList.add('flex'); }
+    function closeClearArchiveConfirmModal() { document.getElementById('clearArchiveConfirmModal')?.classList.add('hidden'); document.getElementById('clearArchiveConfirmModal')?.classList.remove('flex'); }
+    function confirmClearAllRegistry() { monthlyRegistry = []; saveMonthlyRegistry(); closeClearArchiveConfirmModal(); showToast('Registry cleared.', 'info'); }
+    function openResetConfirmModal() { document.getElementById('resetConfirmModal')?.classList.remove('hidden'); document.getElementById('resetConfirmModal')?.classList.add('flex'); }
+    function closeResetConfirmModal() { document.getElementById('resetConfirmModal')?.classList.add('hidden'); document.getElementById('resetConfirmModal')?.classList.remove('flex'); }
+    function confirmResetAllData() {
+      bedsData = {}; initBedState(); saveLocalBeds();
+      censusData = { carryForward: 0, newCase: 0, ot: 0, transferOut: 0, death: 0, admit: 0, aor: 0, discharge: 0, pending: 0, dcrExt: 0 };
+      saveLocalCensus();
+      isShiftSignedOff = false;
+      updateWhatsAppButtonState();
+      renderBeds();
+      closeResetConfirmModal();
+      showToast('Form reset.', 'info');
+    }
+    function renderMonthlyRegistryTable() {}
+    function exportRegistryToCSV() {}
+    function viewArchivedHandover() {}
+
+    function copyTextToClipboard(text) {
+      const tempArea = document.createElement('textarea');
+      tempArea.value = text;
+      document.body.appendChild(tempArea);
+      tempArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(tempArea);
+    }
+
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toastContainer');
+      if (!container) return;
+      const toast = document.createElement('div');
+      let bg = type === 'success' ? 'bg-emerald-600' : (type === 'error' ? 'bg-rose-600' : 'bg-stone-900');
+      toast.className = `${bg} text-white px-4 py-2.5 rounded-xl shadow-lg text-xs font-bold transition flex items-center gap-2`;
+      toast.innerHTML = `<span>${message}</span>`;
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 3500);
+    }
+
+    function initApp() {
+      loadLocalState();
+      renderBeds();
+      renderAdmits();
+      Object.keys(censusData).forEach(k => { const el = document.getElementById(`c_${k}`); if (el) el.value = censusData[k]; });
+      setShift(currentShift);
+      initFirebaseCloudSync();
+
+      setInterval(() => {
+        const now = new Date();
+        const dateEl = document.getElementById('headerLiveDate');
+        if (dateEl) dateEl.textContent = now.toLocaleDateString('en-MY', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' });
+        const clockEl = document.getElementById('headerLiveClock');
+        if (clockEl) clockEl.textContent = `${now.toLocaleTimeString('en-GB')} MYT`;
+      }, 1000);
+
+      if (window.lucide) lucide.createIcons();
+    }
+
+    Object.assign(window, {
+      setShift, onShiftDateChange, saveLocalRoster, filterZone, toggleBedOccupied, openOcrModal, closeOcrModal, captureAndProcessOcr, handleOcrFileUpload,
+      copySingleBedDetails, resetSingleBed, updateBedField, stampBedTransferNow, toggleBedTxa, updateBedTxaTime, stampBedTxaNow, adjustCensus, updateCensusField,
+      generateAndSend24HourCensusWhatsApp, openAdmissionModal, closeAdmissionModal, submitAdmissionModal, deleteAdmissionRow, onAdmissionBayChange,
+      openResetConfirmModal, closeResetConfirmModal, confirmResetAllData, executeSignOff, openMonthlyRegistryModal, closeMonthlyRegistryModal,
+      exportRegistryToCSV, openClearArchiveConfirmModal, closeClearArchiveConfirmModal, confirmClearAllRegistry, openFaqModal, closeFaqModal,
+      expandAllFaqs, collapseAllFaqs, filterFaqItems, handleHeaderWhatsAppClick, sendHandoverToWhatsApp, viewArchivedHandover
+    });
+
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initApp);
+    else initApp();
+  </script>
+</body>
+</html>
